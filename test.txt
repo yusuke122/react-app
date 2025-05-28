@@ -1,0 +1,175 @@
+
+<template>
+  <Line :data="chartData" :options="chartOptions" />
+</template>
+
+<script setup>
+import {
+  Chart as ChartJS,
+  Title,
+  Tooltip,
+  Legend,
+  LineElement,
+  CategoryScale,
+  LinearScale,
+  PointElement,
+} from 'chart.js'
+import { Line } from 'vue-chartjs'
+
+// Chart.jsに必要なコンポーネントを登録
+ChartJS.register(Title, Tooltip, Legend, LineElement, CategoryScale, LinearScale, PointElement)
+
+// ラベル（0時〜23時）
+const labels = Array.from({ length: 24 }, (_, i) => `${i}時`)
+
+// データ（例：ランダムな値）
+const data = Array.from({ length: 24 }, () => Math.floor(Math.random() * 16))
+
+const chartData = {
+  labels,
+  datasets: [
+    {
+      label: 'スコア',
+      data,
+      borderColor: 'rgba(75, 192, 192, 1)',
+      backgroundColor: 'rgba(75, 192, 192, 0.2)',
+      tension: 0.4,
+    },
+  ],
+}
+
+const chartOptions = {
+  responsive: true,
+  scales: {
+    y: {
+      min: 0,
+      max: 15,
+      ticks: {
+        stepSize: 1,
+      },
+      title: {
+        display: true,
+        text: 'スコア',
+      },
+    },
+    x: {
+      title: {
+        display: true,
+        text: '時刻',
+      },
+    },
+  },
+}
+</script>
+
+
+もちろん棒グラフ、円グラフ、折れ線グラフなどchartjsで描ける図はvuechartjsでも描ける。
+propsに描画したいデータとコンフィグを渡して描画できる。スタイリッシュでわかりやすい。
+またデフォルトで図の上に凡例が表示される。これをクリックすると表示したり非表示にしたりできる。
+
+調べるとこいつのデザインもカスタムできるらしいので試す。
+
+<template>
+  <div>
+    <!-- 全グラフ表示チェックボックス -->
+    <div>
+      <label>
+        <input type="checkbox" v-model="showAll" @change="toggleAll" />
+        全グラフを表示
+      </label>
+    </div>
+
+    <!-- 各グラフの表示チェックボックス -->
+    <div v-for="(dataset, index) in datasets" :key="index">
+      <label>
+        <input
+          type="checkbox"
+          v-model="visible[index]"
+          @change="updateChart"
+        />
+        グラフ{{ index + 1 }}
+      </label>
+    </div>
+
+    <!-- グラフ本体 -->
+    <Line :data="chartData" :options="chartOptions" />
+  </div>
+</template>
+
+<script setup>
+import {
+  Chart as ChartJS,
+  Title,
+  Tooltip,
+  Legend,
+  LineElement,
+  CategoryScale,
+  LinearScale,
+  PointElement,
+} from 'chart.js'
+import { Line } from 'vue-chartjs'
+import { reactive, ref, computed, watch } from 'vue'
+
+ChartJS.register(Title, Tooltip, Legend, LineElement, CategoryScale, LinearScale, PointElement)
+
+const labels = Array.from({ length: 24 }, (_, i) => `${i}時`)
+
+// ランダムなデータセット（最大10個）
+const datasets = Array.from({ length: 10 }, (_, i) => ({
+  label: `グラフ${i + 1}`,
+  data: Array.from({ length: 24 }, () => Math.floor(Math.random() * 16)),
+  borderColor: `hsl(${i * 36}, 70%, 50%)`,
+  backgroundColor: `hsl(${i * 36}, 70%, 70%)`,
+  tension: 0.4,
+}))
+
+// 表示制御のための状態
+const visible = ref(datasets.map((_, i) => i === 0)) // 最初のグラフだけデフォルト表示
+const showAll = ref(false)
+
+const chartData = computed(() => ({
+  labels,
+  datasets: datasets.filter((_, i) => visible.value[i]),
+}))
+
+const chartOptions = {
+  responsive: true,
+  plugins: {
+    legend: {
+      display: false, // 凡例非表示
+    },
+  },
+  scales: {
+    y: {
+      min: 0,
+      max: 15,
+      ticks: {
+        stepSize: 1,
+      },
+      title: {
+        display: true,
+        text: 'スコア',
+      },
+    },
+    x: {
+      title: {
+        display: true,
+        text: '時刻',
+      },
+    },
+  },
+}
+
+// チェックボックスの更新処理
+function updateChart() {
+  showAll.value = visible.value.every(Boolean)
+}
+
+// 全チェックの切り替え
+function toggleAll() {
+  visible.value = visible.value.map(() => showAll.value)
+}
+</script>
+
+最初の行で全選択、次の行で選択したグラフだけ表示できるようにした。
+何でエレガント
